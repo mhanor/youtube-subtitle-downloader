@@ -23,3 +23,5 @@ Youtube Subtitle Downloader
 
     :copyright: (c) 2014 by Nguyen Dang Minh (www.minhnd.com)
     :license: BSD, see LICENSE for more details.
+
+    Updated 02/14/2021 to run on Python 3, plus some improvements (Mihai Hanor)

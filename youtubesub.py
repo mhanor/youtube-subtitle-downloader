@@ -24,14 +24,15 @@
     :license: BSD, see LICENSE for more details.
 """
 
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import argparse
 import sys
 import xml.etree.ElementTree as ET
+import traceback
 
 
-class YoutubeSubDownloader():
+class YoutubeSubDownloader:
     video_id = None
     subtitle = None
     languages = {}
@@ -40,7 +41,7 @@ class YoutubeSubDownloader():
         self.video_id = self.extractVideoID(url)
         self.languages = self.getAvailableLanguages()
         if self.languages == {}:
-            print "There's no subtitle"
+            print("There's no subtitle")
             sys.exit()
 
     def extractVideoID(self, url=None):
@@ -51,12 +52,12 @@ class YoutubeSubDownloader():
         - http://www.youtube.com/embed/5MgBikgcWnY
         - http://www.youtube.com/v/5MgBikgcWnY?version=3&amp;hl=en_US
         """
-        url_data = urlparse.urlparse(url)
+        url_data = urllib.parse.urlparse(url)
         if url_data.hostname == 'youtu.be':
             return url_data.path[1:]
         if url_data.hostname in ('www.youtube.com', 'youtube.com'):
             if url_data.path == '/watch':
-                query = urlparse.parse_qs(url_data.query)
+                query = urllib.parse.parse_qs(url_data.query)
                 return query['v'][0]
             if url_data.path[:7] == '/embed/':
                 return url_data.path.split('/')[2]
@@ -66,11 +67,11 @@ class YoutubeSubDownloader():
 
     def download(self, language, filename, filetype):
         """Download subtitle of the selected language"""
-        if language not in self.languages.keys():
-            print "Theres's no subtitle in this language"
+        if language not in list(self.languages.keys()):
+            print("Theres's no subtitle in this language")
             sys.exit()
-        url = "http://www.youtube.com/api/timedtext?v={0}&lang={1}".format(self.video_id, language)
-        self.subtitle = urllib2.urlopen(url)
+        url = "https://www.youtube.com/api/timedtext?v={0}&lang={1}".format(self.video_id, language)
+        self.subtitle = urllib.request.urlopen(url)
         if filetype == "srt":
             self.writeSRTFile(filename)
         else:
@@ -78,8 +79,8 @@ class YoutubeSubDownloader():
 
     def getAvailableLanguages(self):
         """Get all available languages of subtitle"""
-        url = "http://www.youtube.com/api/timedtext?v=%s&type=list" % self.video_id
-        xml = urllib2.urlopen(url)
+        url = "https://www.youtube.com/api/timedtext?v=%s&type=list" % self.video_id
+        xml = urllib.request.urlopen(url)
         tree = ET.parse(xml)
         root = tree.getroot()
         languages = {}
@@ -89,8 +90,8 @@ class YoutubeSubDownloader():
 
     def list(self):
         """List all available languages of subtitle"""
-        for key, value in self.languages.iteritems():
-            print key, value
+        for key, value in self.languages.items():
+            print(key, value)
 
     def writeXMLFile(self, filename=None):
         with open(filename + ".xml", 'w') as f:
@@ -108,23 +109,28 @@ class YoutubeSubDownloader():
 
     def formatSRTTime(self, secTime):
         """Convert a time in seconds (in Google's subtitle) to SRT time format"""
-        sec, micro = str(secTime).split('.')
+        try:
+            sec, micro = str(secTime).split('.')
+        except:
+            sec = secTime
+            micro = '000'
         m, s = divmod(int(sec), 60)
         h, m = divmod(m, 60)
-        return "{:02}:{:02}:{:02},{}".format(h,m,s,micro)
+        
+        return "{:02}:{:02}:{:02},{}".format(h,m,s,micro[0:3].ljust(3,'0'))
 
     def printSRTLine(self, line, start, duration, text):
         """Print a subtitle in SRT format"""
         end = self.formatSRTTime(float(start) + float(duration))
         start = self.formatSRTTime(start)
         text = self.convertHTML(text)
-        return "{}\n{} --> {}\n{}\n\n".format(line, start, end, text)
+        return "{}\n{} --> {}\n{}\n\n".format(line, start, end, text.decode('utf-8'))
 
     def convertHTML(self, text):
         """A few HTML encodings replacements.
             &#39; to '
         """
-        return text.replace('&#39;', "'")
+        return text.replace(b"&#39;", b"'")
 
 
 def main():
@@ -139,11 +145,11 @@ def main():
 
         downloader = YoutubeSubDownloader(args.url)
         if args.list:
-            print "Available languages:"
+            print("Available languages:")
             f = downloader.list()
         downloader.download(args.language, args.filename, args.filetype)
     except Exception as e:
-        print e
+        print(traceback.format_exc())
 
 
 if __name__ == '__main__':
