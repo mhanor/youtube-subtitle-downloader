@@ -30,6 +30,7 @@ import argparse
 import sys
 import xml.etree.ElementTree as ET
 import traceback
+import html
 
 
 class YoutubeSubDownloader:
@@ -104,7 +105,7 @@ class YoutubeSubDownloader:
         with open(filename + ".srt", 'w') as f:
             line = 1
             for child in root:
-                f.write(self.printSRTLine(line, child.attrib["start"], child.attrib["dur"], child.text.encode('utf-8')))
+                f.write(self.printSRTLine(line, child.attrib["start"], child.attrib["dur"], child.text))
                 line += 1
 
     def formatSRTTime(self, secTime):
@@ -124,13 +125,13 @@ class YoutubeSubDownloader:
         end = self.formatSRTTime(float(start) + float(duration))
         start = self.formatSRTTime(start)
         text = self.convertHTML(text)
-        return "{}\n{} --> {}\n{}\n\n".format(line, start, end, text.decode('utf-8'))
+        return "{}\n{} --> {}\n{}\n\n".format(line, start, end, text)
 
     def convertHTML(self, text):
         """A few HTML encodings replacements.
             &#39; to '
         """
-        return text.replace(b"&#39;", b"'")
+        return html.unescape(text)
 
 
 def main():
