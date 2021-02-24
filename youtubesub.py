@@ -97,7 +97,7 @@ class YoutubeSubDownloader:
     def writeXMLFile(self, filename=None):
         with open(filename + ".xml", 'w') as f:
             for line in self.subtitle:
-                f.write(line)
+                f.write(line.decode('utf-8'))
 
     def writeSRTFile(self, filename=None):
         tree = ET.parse(self.subtitle)
